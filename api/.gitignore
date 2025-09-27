@@ -1,0 +1,79 @@
+# Directories and files that should not be tracked by Git
+
+# Dependencies
+/vendor/
+composer.lock
+
+# Environment
+.env
+.env.local
+.env.test
+.env.production
+
+# Logs
+*.log
+logs/
+var/log/
+
+# Tests
+.phpunit.result.cache
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Icon?
+.apdisk
+
+# Cache
+*.cache
+.cache/
+tmp/
+temp/
+
+# Database
+*.sql
+*.db
+*.sqlite
+
+# Backup files
+*.bak
+*.backup
+*~
+
+# Sensitive files
+config.php
+*.key
+*.pem
+*.crt
+*.cert
+
+# PHP
+*.php.bak
+*.php~
+*.php.save
+
+# Coverage
+coverage/
+htmlcov/
+
+# Docker
+.docker/
+*.dockerignore
+
+# Deployment
+deploy/
+build/
+dist/
+
+# Other
+node_modules/
+package-lock.json
+yarn.lock

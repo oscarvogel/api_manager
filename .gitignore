@@ -1,0 +1,57 @@
+# Node
+/frontend/node_modules/
+/frontend/dist/
+
+# Vite cache
+frontend/.vite/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ENV files
+*.env
+api/.env
+
+# Composer / PHP
+/vendor/
+/api/vendor/
+composer.phar
+composer.lock
+
+# PHPStorm, VSCode, OS
+.idea/
+.vscode/
+*.sublime-workspace
+*.sublime-project
+.DS_Store
+Thumbs.db
+
+# Build outputs
+build/
+dist/
+
+# Certificates
+*.pem
+*.key
+
+# Misc
+*.sqlite
+*.db
+.env.local
+.env.*.local
+
+# Ignore coverage and test artifacts
+coverage/
+phpunit.xml
+
+# Ignore generated IDE files
+*.iml
+
+# Ignore Mac/Windows files
+.DS_Store
+Thumbs.db
