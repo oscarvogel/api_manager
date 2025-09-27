@@ -70,5 +70,3 @@ vendor/bin/phpunit
 Se incluye un workflow básico en `.github/workflows/ci.yml` que ejecuta tests PHP y construye el frontend en cada push/PR.
 
 ---
-
-Si quieres, puedo añadir instrucciones de despliegue (Docker, Render, etc.) o configurar un pipeline de despliegue automático.
