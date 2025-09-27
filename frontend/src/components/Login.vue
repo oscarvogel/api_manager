@@ -203,16 +203,16 @@ export default {
         console.error('Login error:', error)
         
         // Manejar diferentes tipos de errores
-        if (error.response) {
-          const errorData = error.response.data
-          if (typeof errorData === 'string') {
-            if (errorData.includes('Fatal error') || errorData.includes('Warning')) {
-              this.errorMessage = 'Error del servidor. Verifica que la base de datos esté configurada correctamente.'
-            } else {
-              this.errorMessage = errorData
-            }
-          } else if (errorData && errorData.error) {
-            this.errorMessage = errorData.error
+        // Preferir payload servidor adjuntado por ApiService: error.server
+        const server = error.server || error.response?.data
+        if (server) {
+          // If server includes a detailed debug field, show it first
+          if (server.detail) {
+            this.errorMessage = server.detail
+          } else if (server.error) {
+            this.errorMessage = server.error
+          } else if (typeof server === 'string') {
+            this.errorMessage = server
           } else {
             this.errorMessage = 'Credenciales incorrectas. Verifica tu usuario y contraseña.'
           }

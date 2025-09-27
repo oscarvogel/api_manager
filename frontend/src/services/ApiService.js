@@ -104,6 +104,24 @@ class ApiService {
   clearApiKey() {
     localStorage.removeItem('api_key')
   }
+
+  // API Keys management
+  async listApiKeys() {
+    return this.api.get('/?endpoint=list_api_keys')
+  }
+
+  async revokeApiKey(id) {
+    return this.api.post('/?endpoint=revoke_api_key', { id })
+  }
+
+  async createApiKey(payload = {}) {
+    return this.api.post('/?endpoint=create_api_key', payload)
+  }
+
+  // System diagnostic
+  async systemInfo() {
+    return this.api.get('/?endpoint=system_info')
+  }
 }
 
 export default new ApiService()

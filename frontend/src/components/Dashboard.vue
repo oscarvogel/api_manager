@@ -311,21 +311,73 @@
               </svg>
             </button>
           </div>
-          <div class="space-y-4">
-            <div class="p-4 bg-gray-50 rounded-lg">
-              <h4 class="font-medium text-gray-900 mb-2">Información del Sistema</h4>
-              <div class="text-sm text-gray-600 space-y-1">
-                <p><strong>API Key:</strong> {{ ApiService.getApiKey() ? '***' + ApiService.getApiKey().slice(-6) : 'No configurada' }}</p>
-                <p><strong>Usuario:</strong> Superadministrador</p>
-                <p><strong>Última Conexión:</strong> {{ lastUpdate }}</p>
+          <div>
+            <div class="mb-4 border-b">
+              <nav class="-mb-px flex space-x-4" aria-label="Tabs">
+                <button @click="settingsTab = 'info'" :class="settingsTab === 'info' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500'" class="whitespace-nowrap py-2 px-4 border-b-2 font-medium text-sm">Info</button>
+                <button @click="settingsTab = 'api_keys'; loadApiKeys()" :class="settingsTab === 'api_keys' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500'" class="whitespace-nowrap py-2 px-4 border-b-2 font-medium text-sm">API Keys</button>
+                <button @click="settingsTab = 'diagnostic'; loadSystemInfo()" :class="settingsTab === 'diagnostic' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500'" class="whitespace-nowrap py-2 px-4 border-b-2 font-medium text-sm">Diagnóstico</button>
+              </nav>
+            </div>
+
+            <div v-if="settingsTab === 'info'" class="space-y-4">
+              <div class="p-4 bg-gray-50 rounded-lg">
+                <h4 class="font-medium text-gray-900 mb-2">Información del Sistema</h4>
+                <div class="text-sm text-gray-600 space-y-1">
+                  <p><strong>API Key:</strong> {{ ApiService.getApiKey() ? '***' + ApiService.getApiKey().slice(-6) : 'No configurada' }}</p>
+                  <p><strong>Usuario:</strong> Superadministrador</p>
+                  <p><strong>Última Conexión:</strong> {{ lastUpdate }}</p>
+                </div>
+              </div>
+
+              <div class="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <h4 class="font-medium text-yellow-800 mb-2">⚠️ Zona Peligrosa</h4>
+                <p class="text-sm text-yellow-700 mb-3">Estas acciones no se pueden deshacer.</p>
+                <button @click="confirmLogout" class="w-full px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-md transition-colors">
+                  Cerrar Sesión
+                </button>
               </div>
             </div>
-            <div class="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-              <h4 class="font-medium text-yellow-800 mb-2">⚠️ Zona Peligrosa</h4>
-              <p class="text-sm text-yellow-700 mb-3">Estas acciones no se pueden deshacer.</p>
-              <button @click="confirmLogout" class="w-full px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-md transition-colors">
-                Cerrar Sesión
-              </button>
+
+            <div v-if="settingsTab === 'api_keys'" class="space-y-4">
+              <div class="flex items-center justify-between">
+                <h4 class="font-medium text-gray-900">Claves API</h4>
+                <div>
+                  <button @click="createNewKey" class="px-3 py-1 bg-green-600 text-white rounded-md text-sm hover:bg-green-700">Generar nueva</button>
+                </div>
+              </div>
+              <div class="p-3 bg-gray-50 rounded-lg">
+                <div v-if="apiKeysLoading" class="text-sm text-gray-500">Cargando claves...</div>
+                <div v-else>
+                  <div v-if="apiKeys.length">
+                    <ul class="space-y-2">
+                      <li v-for="k in apiKeys" :key="k.id" class="flex items-center justify-between p-2 border rounded-md bg-white">
+                        <div class="text-sm">
+                          <div><strong>ID:</strong> {{ k.id }}</div>
+                          <div class="text-xs text-gray-500"><strong>Creada:</strong> {{ k.created_at }}</div>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                          <button @click="revokeKey(k)" class="px-2 py-1 text-sm bg-red-600 text-white rounded-md">Revocar</button>
+                        </div>
+                      </li>
+                    </ul>
+                  </div>
+                  <div v-else class="text-sm text-gray-500">No hay claves registradas</div>
+                </div>
+              </div>
+            </div>
+
+            <div v-if="settingsTab === 'diagnostic'" class="space-y-4">
+              <div class="flex items-center justify-between">
+                <h4 class="font-medium text-gray-900">Diagnóstico</h4>
+                <button @click="loadSystemInfo" class="px-3 py-1 bg-blue-600 text-white rounded-md text-sm">Actualizar</button>
+              </div>
+              <div class="p-3 bg-gray-50 rounded-lg">
+                <div v-if="systemInfoLoading" class="text-sm text-gray-500">Cargando diagnóstico...</div>
+                <div v-else>
+                  <pre class="text-xs text-gray-700 whitespace-pre-wrap">{{ systemInfo ? JSON.stringify(systemInfo, null, 2) : 'Ejecuta la verificación para ver resultados' }}</pre>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -364,8 +416,15 @@ export default {
       // System Check
       systemCheckLoading: false,
       systemCheckResults: null
-      // Edit user
-      ,editUser: null,
+  // Settings / API Keys
+  ,apiKeys: [],
+  apiKeysLoading: false,
+  apiKeysError: null,
+  systemInfoLoading: false,
+  systemInfo: null,
+  settingsTab: 'info',
+  // Edit user
+  editUser: null,
       editUserConfirm: { passwordConfirm: '' },
       editUserLoading: false,
       editUserError: null
@@ -536,8 +595,10 @@ export default {
         // Verificar datos de muestra
         try {
           const response = await ApiService.read('usuarios')
-          const recordCount = Array.isArray(response.data) ? response.data.length : 0
-          
+          // Normalize response: API returns { data: [...] } or raw array
+          const payload = response.data && response.data.data ? response.data.data : response.data
+          const recordCount = Array.isArray(payload) ? payload.length : 0
+
           if (recordCount > 0) {
             checks.push({
               name: 'Base de Datos',
@@ -707,6 +768,86 @@ export default {
         this.$router.push('/login')
       }
     }
+    ,
+
+    // === API KEYS ===
+    async loadApiKeys() {
+      this.apiKeysLoading = true
+      this.apiKeysError = null
+      try {
+        const resp = await ApiService.listApiKeys()
+        const payload = resp.data && resp.data.data ? resp.data.data : resp.data
+        this.apiKeys = Array.isArray(payload) ? payload : []
+      } catch (err) {
+        console.error('Error loading API keys', err)
+        const resp = err.server || err.response?.data
+        this.apiKeysError = resp?.detail || resp?.error || err.message || 'Error al cargar claves API'
+      } finally {
+        this.apiKeysLoading = false
+      }
+    },
+
+    async revokeKey(key) {
+      if (!confirm('Revocar esta clave API?')) return
+      try {
+        await ApiService.revokeApiKey(key.id)
+        if (typeof Swal !== 'undefined') Swal.fire({ icon: 'success', title: 'Clave revocada', toast: true, position: 'top-end', timer: 2000, showConfirmButton: false })
+        await this.loadApiKeys()
+      } catch (err) {
+        console.error('Error revoking key', err)
+        const resp = err.server || err.response?.data
+        const msg = resp?.detail || resp?.error || err.message || 'Error al revocar'
+        if (typeof Swal !== 'undefined') Swal.fire({ icon: 'error', title: 'No se pudo revocar', text: msg })
+      }
+    },
+
+    async createNewKey() {
+      try {
+        const resp = await ApiService.createApiKey()
+        const apiKey = resp?.data?.api_key
+        if (apiKey) {
+          if (typeof Swal !== 'undefined') {
+            Swal.fire({ title: 'Nueva API Key', html: `<code class="font-mono">${apiKey}</code>`, width: 600 })
+          }
+          await this.loadApiKeys()
+        }
+      } catch (err) {
+        console.error('Error creating api key', err)
+        const resp = err.server || err.response?.data
+        const msg = resp?.detail || resp?.error || err.message || 'Error al crear clave'
+        if (typeof Swal !== 'undefined') Swal.fire({ icon: 'error', title: 'No se pudo crear clave', text: msg })
+      }
+    },
+
+    // === SYSTEM INFO ===
+    async loadSystemInfo() {
+      this.systemInfoLoading = true
+      try {
+        const resp = await ApiService.systemInfo()
+        const payload = resp.data && resp.data.data ? resp.data.data : resp.data
+        this.systemInfo = payload
+        // Map to systemCheckResults for reuse
+        const checks = []
+        checks.push({ name: 'DEBUG', status: payload.debug ? 'warning' : 'success', message: `DEBUG=${payload.debug}` })
+        if (payload.db) {
+          if (payload.db.error) {
+            checks.push({ name: 'DB', status: 'error', message: payload.db.error })
+          } else {
+            for (const [t, c] of Object.entries(payload.db.counts || {})) {
+              checks.push({ name: `Tabla: ${t}`, status: c > 0 ? 'success' : 'warning', message: `${c} registros` })
+            }
+          }
+        }
+        this.systemCheckResults = checks
+      } catch (err) {
+        console.error('Error loading system info', err)
+        const resp = err.server || err.response?.data
+        const msg = resp?.detail || resp?.error || err.message || 'Error al obtener información del sistema'
+        if (typeof Swal !== 'undefined') Swal.fire({ icon: 'error', title: 'Error', text: msg })
+      } finally {
+        this.systemInfoLoading = false
+      }
+    },
   }
 }
 </script>
